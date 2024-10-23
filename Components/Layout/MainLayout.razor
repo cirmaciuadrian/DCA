@@ -1,0 +1,41 @@
+﻿@inherits LayoutComponentBase
+
+<MudThemeProvider/>
+<MudPopoverProvider/>
+<MudDialogProvider/>
+<MudSnackbarProvider/>
+
+<MudLayout Class="full-page-layout">
+    <MudAppBar>
+        <MudIcon Icon="@Icons.Material.Filled.Calculate" Color="Color.Inherit" Edge="Edge.Start"/>
+        DCA
+    </MudAppBar>
+    <MudContainer MaxWidth="MaxWidth.Medium"  Class="mt-5">
+        <MudMainContent>
+            @Body
+        </MudMainContent>
+    </MudContainer>
+
+</MudLayout>
+
+<style>
+    html, body, .full-page-layout {
+        height: 100%;
+        background-color: #f0f0f0;
+        margin: 0;
+    }
+
+    .full-page-layout {
+        display: flex;
+        flex-direction: column;
+    }
+
+    MudMainContent {
+        flex: 1;
+    }
+</style>
+<div id="blazor-error-ui">
+    An unhandled error has occurred.
+    <a href="" class="reload">Reload</a>
+    <a class="dismiss">🗙</a>
+</div>

@@ -1,0 +1,104 @@
+﻿@page "/"
+@using DCA.Service
+@inject ICalculatorService CalculatorService;
+<PageTitle>DCA Calculator</PageTitle>
+
+<MudGrid>
+    <MudItem md="12">
+        <MudPaper Class="pa-4" Elevation="3">
+            <h2 class="mb-1">Add investment</h2>
+            <MudGrid class="pt-1">
+                <MudItem md="6">
+                        <MudSelect AdornmentIcon="@Icons.Material.Filled.CurrencyBitcoin" Label="Select your coin"
+                                   AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Primary"
+                                   @bind-Value="InvestmentSelectedCoin" Variant="Variant.Outlined"
+                                   HelperText="@_investmentCoinPriceHelperText" FullWidth="true" Clearable>
+                            @foreach (var coin in TopCoins)
+                            {
+                                <MudSelectItem Value="@coin">@coin.Name (@coin.Symbol)</MudSelectItem>
+                            }
+                        </MudSelect>
+                </MudItem>
+                <MudItem md="6">
+                    <MudTooltip Text="You can multiple dates">
+                        <MudDatePicker @bind-Date="_selectedInvestmentDate"
+                                       FixYear="@_dateInFebruary.Year"
+                                       FixMonth="@_dateInFebruary.Month"
+                                       PickerMonth="@_dateInFebruary"
+                                       Label="Add Days"
+                                       DateFormat="dd"
+                                       Variant="Variant.Outlined"
+                                       PickerClosed="@OnDateAdd"/>
+                    </MudTooltip>
+                    <MudChipSet T="string"
+                                AllClosable="@true"
+                                SelectionMode="@SelectionMode.MultiSelection"
+                                OnClose="@OnDateDelete"
+                                Variant="Variant.Outlined">
+                        @for (var i = 0; i < _selectedDays.Count; i++)
+                        {
+                            var localIndex = i;
+                            <MudChip Value="@_selectedDays[localIndex]"
+                                     Color="Color.Primary"/>
+                        }
+                    </MudChipSet>
+                </MudItem>
+                <MudItem md="6">
+                    <MudDateRangePicker Label="Select a range" Variant="Variant.Outlined" @bind-Date="_selectedInvestmentDateRange"
+                                        MaxDate="@DateTime.Now"
+                                        MinDate="@_minDateInvestment"
+                                        />
+                </MudItem>
+                <MudItem md="4">
+                    <MudNumericField bind-Value="_investmentAmount" Label="€" HelperText="Invested Amount"
+                                     AdornmentColor="Color.Primary" Variant="Variant.Outlined"
+                                     AdornmentIcon="@Icons.Material.Filled.EuroSymbol" Min="0">
+                    </MudNumericField>
+                </MudItem>
+
+                <MudItem md="2">
+                    <MudButton  Class="mt-4" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add"  Color="Color.Primary">Add</MudButton>
+                </MudItem>
+            </MudGrid>
+
+        </MudPaper>
+    </MudItem>
+
+    <!-- Historical Data Section -->
+    <MudItem xs="12">
+        <MudPaper Class="pa-4" Elevation="4">
+            <MudText Typo="Typo.h6">Historical Data</MudText>
+            <p>Historical data will be displayed here.</p>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<TopCryptoItem> TopCoins = [];
+    TopCryptoItem? InvestmentSelectedCoin;
+    private string _investmentCoinPriceHelperText => InvestmentSelectedCoin != null 
+        ? InvestmentSelectedCoin.Quote.EUR.Price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR")) 
+        : "Please don't use currencies with more then 2 decimals";
+    private readonly List<string> _selectedDays = [];
+    private DateTime? _selectedInvestmentDate;
+    private readonly DateTime _dateInFebruary = new DateTime(2023, 2, 1);
+    private readonly DateTime _minDateInvestment = new DateTime(2022, 01, 01);
+    private DateRange? _selectedInvestmentDateRange;
+    private int _investmentAmount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // TopCoins = (await CalculatorService.GetTop100Currencies()).Data;
+        TopCoins.Add(new TopCryptoItem("Bitcoin", "BTC", new TopCryptoQuote(new TopCruptoQuoteEUR(new decimal(12.12)))));
+    }
+
+    private void OnDateAdd()
+    {
+        if (_selectedInvestmentDate.HasValue && !_selectedDays.Contains(_selectedInvestmentDate.Value.ToString("dd")))
+            _selectedDays.Add(_selectedInvestmentDate.Value.ToString("dd"));
+    }
+
+    private void OnDateDelete(MudChip<string> date)
+        => _selectedDays.Remove(date.Value!);
+
+}
