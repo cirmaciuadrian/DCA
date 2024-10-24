@@ -18,6 +18,7 @@ builder.Services.AddHttpClient<CoinMarketCapClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["CoinMarketCap:ApiUrl"]!);
     client.DefaultRequestHeaders.Add(builder.Configuration["CoinMarketCap:HeaderKeyName"]!, builder.Configuration["CoinMarketCap:ApiKey"]); 
 });
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<ICalculatorService, CalculatorService>();
 var app = builder.Build();
 

@@ -1,6 +1,8 @@
 ﻿@page "/"
 @using DCA.Service
+@using DCA.Data.Entities
 @inject ICalculatorService CalculatorService;
+@inject ISnackbar Snackbar
 <PageTitle>DCA Calculator</PageTitle>
 
 <MudGrid>
@@ -8,16 +10,17 @@
         <MudPaper Class="pa-4" Elevation="3">
             <h2 class="mb-1">Add investment</h2>
             <MudGrid class="pt-1">
+
                 <MudItem md="6">
-                        <MudSelect AdornmentIcon="@Icons.Material.Filled.CurrencyBitcoin" Label="Select your coin"
-                                   AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Primary"
-                                   @bind-Value="InvestmentSelectedCoin" Variant="Variant.Outlined"
-                                   HelperText="@_investmentCoinPriceHelperText" FullWidth="true" Clearable>
-                            @foreach (var coin in TopCoins)
-                            {
-                                <MudSelectItem Value="@coin">@coin.Name (@coin.Symbol)</MudSelectItem>
-                            }
-                        </MudSelect>
+                    <MudSelect AdornmentIcon="@Icons.Material.Filled.CurrencyBitcoin" Label="Select your coin"
+                               AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Primary"
+                               @bind-Value="_investmentSelectedCoin" Variant="Variant.Outlined"
+                               HelperText="@InvestmentCoinPriceHelperText" FullWidth="true" Clearable>
+                        @foreach (var coin in _topCoins)
+                        {
+                            <MudSelectItem Value="@coin">@coin.Name (@coin.Symbol)</MudSelectItem>
+                        }
+                    </MudSelect>
                 </MudItem>
                 <MudItem md="6">
                     <MudTooltip Text="You can multiple dates">
@@ -35,35 +38,39 @@
                                 SelectionMode="@SelectionMode.MultiSelection"
                                 OnClose="@OnDateDelete"
                                 Variant="Variant.Outlined">
-                        @for (var i = 0; i < _selectedDays.Count; i++)
+                        @for (var i = 0; i < _selectedInvestmentDays.Count; i++)
                         {
                             var localIndex = i;
-                            <MudChip Value="@_selectedDays[localIndex]"
+                            <MudChip Value="@_selectedInvestmentDays[localIndex]"
                                      Color="Color.Primary"/>
                         }
                     </MudChipSet>
                 </MudItem>
                 <MudItem md="6">
-                    <MudDateRangePicker Label="Select a range" Variant="Variant.Outlined" @bind-Date="_selectedInvestmentDateRange"
+                    <MudDateRangePicker Label="Select a range" Variant="Variant.Outlined" @bind-DateRange="_selectedInvestmentDateRange"
                                         MaxDate="@DateTime.Now"
-                                        MinDate="@_minDateInvestment"
-                                        />
+                                        MinDate="@_minDateInvestment"/>
                 </MudItem>
                 <MudItem md="4">
-                    <MudNumericField bind-Value="_investmentAmount" Label="€" HelperText="Invested Amount"
+                    <MudNumericField @bind-Value="_investmentAmount" Label="€" HelperText="Invested Amount"
                                      AdornmentColor="Color.Primary" Variant="Variant.Outlined"
                                      AdornmentIcon="@Icons.Material.Filled.EuroSymbol" Min="0">
                     </MudNumericField>
                 </MudItem>
 
                 <MudItem md="2">
-                    <MudButton  Class="mt-4" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add"  Color="Color.Primary">Add</MudButton>
+                    <MudButton Class="mt-4" Variant="Variant.Filled" OnClick="AddInvestment" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Add</MudButton>
                 </MudItem>
             </MudGrid>
 
         </MudPaper>
     </MudItem>
-
+    @if (_isLoading)
+    {
+        <MudOverlay Visible="true" DarkBackground="true" Absolute="true">
+            <MudProgressCircular Color="Color.Secondary" Indeterminate="true"/>
+        </MudOverlay>
+    }
     <!-- Historical Data Section -->
     <MudItem xs="12">
         <MudPaper Class="pa-4" Elevation="4">
@@ -72,33 +79,90 @@
         </MudPaper>
     </MudItem>
 </MudGrid>
-
 @code {
-    private List<TopCryptoItem> TopCoins = [];
-    TopCryptoItem? InvestmentSelectedCoin;
-    private string _investmentCoinPriceHelperText => InvestmentSelectedCoin != null 
-        ? InvestmentSelectedCoin.Quote.EUR.Price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR")) 
+    private bool _isLoading = true;
+    private List<TopCryptoItem> _topCoins = [];
+    TopCryptoItem? _investmentSelectedCoin;
+
+    private string InvestmentCoinPriceHelperText => _investmentSelectedCoin != null
+        ? _investmentSelectedCoin.Quote.EUR.Price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))
         : "Please don't use currencies with more then 2 decimals";
-    private readonly List<string> _selectedDays = [];
+
+    private readonly List<string> _selectedInvestmentDays = [];
     private DateTime? _selectedInvestmentDate;
     private readonly DateTime _dateInFebruary = new DateTime(2023, 2, 1);
     private readonly DateTime _minDateInvestment = new DateTime(2022, 01, 01);
     private DateRange? _selectedInvestmentDateRange;
-    private int _investmentAmount;
+    private int? _investmentAmount;
 
     protected override async Task OnInitializedAsync()
     {
-        // TopCoins = (await CalculatorService.GetTop100Currencies()).Data;
-        TopCoins.Add(new TopCryptoItem("Bitcoin", "BTC", new TopCryptoQuote(new TopCruptoQuoteEUR(new decimal(12.12)))));
+        _topCoins = (await CalculatorService.GetTop100Currencies()).Data;
+        _isLoading = false;
     }
 
     private void OnDateAdd()
     {
-        if (_selectedInvestmentDate.HasValue && !_selectedDays.Contains(_selectedInvestmentDate.Value.ToString("dd")))
-            _selectedDays.Add(_selectedInvestmentDate.Value.ToString("dd"));
+        if (_selectedInvestmentDate.HasValue && !_selectedInvestmentDays.Contains(_selectedInvestmentDate.Value.ToString("dd")))
+            _selectedInvestmentDays.Add(_selectedInvestmentDate.Value.ToString("dd"));
     }
 
     private void OnDateDelete(MudChip<string> date)
-        => _selectedDays.Remove(date.Value!);
+        => _selectedInvestmentDays.Remove(date.Value!);
 
+    private async Task AddInvestment()
+    {
+        if (!ValidateInvestmentInput()) return;
+        IsLoading(true);
+        Task.Delay(2000);
+        CleanInvestmentForm();
+        IsLoading(false);
+        // var investment = new Investment
+        // {
+        //     Coin = _investmentSelectedCoin,
+        //     Amount = _investmentAmount,
+        //     Dates = _selectedInvestmentDays
+        // };
+        //
+        // await CalculatorService.AddInvestment(investment);
+    }
+
+    private bool ValidateInvestmentInput()
+    {
+        List<string> errorMessages = [];
+        
+        if (_investmentSelectedCoin == null)
+            errorMessages.Add("Please select a coin.");
+
+        if (_selectedInvestmentDays.Count == 0)
+            errorMessages.Add("Please select the monthly investment days.");
+
+        if (_investmentAmount is null or 0)
+            errorMessages.Add("Invalid value for the investment amount.");
+
+        if (_selectedInvestmentDateRange == null)
+            errorMessages.Add("Please select a date range.");
+        
+        if (errorMessages.Count == 0) return true;
+        
+        var errorList = string.Join("", errorMessages.Select(msg => $"<li>{msg}</li>"));
+        Snackbar.Add(new MarkupString($"<ul>{errorList}</ul>"), Severity.Error);
+
+        return false;
+    }
+
+    private void CleanInvestmentForm()
+    {
+        _investmentSelectedCoin = null;
+        _selectedInvestmentDays.Clear();
+        _selectedInvestmentDate = null;
+        _selectedInvestmentDateRange = null;
+        _investmentAmount = 0;
+    }
+
+    private void IsLoading(bool value)
+    {
+        _isLoading = value;
+        StateHasChanged();
+    }
 }
