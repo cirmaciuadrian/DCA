@@ -1,8 +1,9 @@
 ﻿@page "/"
+@using Binance.Net.Clients
 
 @inject ICalculatorService CalculatorService;
 @inject ISnackbar Snackbar;
-
+@inject BinanceWebSocketClient BinanceWebSocketClient
 <PageTitle>DCA Calculator</PageTitle>
 
 <MudGrid>
@@ -70,15 +71,48 @@
             <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
         </MudOverlay>
     }
-    <!-- Historical Data Section -->
-    <MudItem xs="12">
+
+    <MudItem md="12">
         <MudPaper Class="pa-4" Elevation="4">
             <MudText Typo="Typo.h6">Historical Data</MudText>
-            <p>Historical data will be displayed here.</p>
+            <MudTable T="InvestmentsResponse" Items="_investments">
+                <HeaderContent>
+                    <MudTh>Coin</MudTh>
+                    <MudTh>From</MudTh>
+                    <MudTh>To</MudTh>
+                    <MudTh>Days of investment</MudTh>
+                    <MudTh>Total invested</MudTh>
+                    <MudTh>Unrealized gains</MudTh>
+                    <MudTh>Total coins owned</MudTh>
+                    <MudTh>Profit</MudTh>
+                    <MudTh>ROI</MudTh>
+                    <MudTh></MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd DataLabel="Coin">@context.Symbol</MudTd>
+                    <MudTd DataLabel="From">@context.From.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd DataLabel="To">@context.To.ToString("dd/MM/yyyy")</MudTd>
+                    <MudTd DataLabel="Days of investment">@context.DaysOfInvestment</MudTd>
+                    <MudTd DataLabel="Total invested">@context.TotalFiatInvested.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</MudTd>
+                    <MudTd DataLabel="Unrealized gains">@context.TotalInvestmentPrice.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</MudTd>
+                    <MudTd DataLabel="Total coins owned">@context.TotalCryptoOwned</MudTd>
+                    <MudTd DataLabel="Profit">@context.Profit.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))</MudTd>
+                    <MudTd DataLabel="ROI">@context.ROI%</MudTd>
+                    <MudTd DataLabel="Actions">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Secondary" OnClick="() => DeleteInvestment(context.Id)">Delete</MudIconButton>
+                    </MudTd>
+                </RowTemplate>
+
+                <PagerContent>
+                    <MudTablePager PageSizeOptions="new int[]{50, 100}" />
+                </PagerContent>
+            </MudTable>
+
         </MudPaper>
     </MudItem>
 </MudGrid>
 @code {
+    private List<InvestmentsResponse> _investments = new();
     private bool _isLoading = true;
     private List<TopCryptoItem> _topCoins = [];
     TopCryptoItem? _investmentSelectedCoin;
@@ -94,13 +128,10 @@
 
     protected override async Task OnInitializedAsync()
     {
-        var topCurrenciesResponse = await CalculatorService.GetTop100CurrenciesAsync();
-        // BinanceClient.Test();
-        if (topCurrenciesResponse.IsSuccess)
-            _topCoins = topCurrenciesResponse.Response.Data;
-        else
-            Snackbar.Add(topCurrenciesResponse.ErrorMessage, Severity.Error);
+        _investments = await CalculatorService.GetAllInvestmentsAsync();
+        _topCoins = (await CalculatorService.GetTop100CurrenciesAsync()).Response.Data;
 
+        await SubscribeToPriceUpdates();
         _isLoading = false;
     }
 
@@ -128,6 +159,10 @@
             Snackbar.Add(addInvestmentResponse.ErrorMessage, Severity.Error);
             return;
         }
+
+        _investments = await CalculatorService.GetAllInvestmentsAsync();
+        await BinanceWebSocketClient.SubscribeToPriceUpdate(UpdatePriceCallback, _investmentSelectedCoin!.Symbol);
+
         Snackbar.Add("Investment added successfully", Severity.Success);
         CleanInvestmentForm();
         IsLoading(false);
@@ -170,5 +205,32 @@
     {
         _isLoading = value;
         StateHasChanged();
+    }
+
+    private void UpdatePriceCallback(LivePriceItem newPrice)
+        => InvokeAsync(() =>
+            {
+                _investments.Where(x => x.Symbol == newPrice.Symbol).ToList().ForEach(investment => investment.CoinPrice = newPrice.Price);
+                StateHasChanged();
+            });
+
+    private async Task SubscribeToPriceUpdates()
+    {
+        foreach (var investment in _investments)
+        {
+            await BinanceWebSocketClient.SubscribeToPriceUpdate(UpdatePriceCallback, investment.Symbol);
+        }
+    }
+
+    private async Task DeleteInvestment(int id)
+    {
+        IsLoading(true);
+
+        await CalculatorService.DeleteInvestmentAsync(id);
+        await BinanceWebSocketClient.UnsubscribeAllAsync();
+        _investments.RemoveAll(x => x.Id == id);
+        await SubscribeToPriceUpdates();
+
+        IsLoading(false);
     }
 }

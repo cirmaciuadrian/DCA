@@ -18,6 +18,8 @@ builder.Services.AddHttpClient<CoinMarketCapClient>(client =>
     client.BaseAddress = new Uri(builder.Configuration["CoinMarketCap:ApiUrl"]!);
     client.DefaultRequestHeaders.Add(builder.Configuration["CoinMarketCap:HeaderKeyName"]!, builder.Configuration["CoinMarketCap:ApiKey"]); 
 });
+builder.Services.AddSingleton<BinanceWebSocketClient>();
+
 builder.Services.AddMemoryCache();
 builder.Services.AddBinance();
 builder.Services.AddScoped<ICalculatorService, CalculatorService>();

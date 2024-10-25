@@ -60,6 +60,43 @@ public class CalculatorService(CoinMarketCapClient coinMarketCapClient, AppDbCon
         }
     }
 
+    public async Task<List<InvestmentsResponse>> GetAllInvestmentsAsync()
+    {
+        var dbInvestments = await dbContext.InvestmentSummary
+            .Include(x => x.Investments)
+                .ThenInclude(x => x.CoinPriceHistory)
+            .AsNoTracking()
+            .ToListAsync();
+
+        return dbInvestments.Select(x => new InvestmentsResponse
+        {
+            Id = x.Id,
+            DaysOfInvestment = x.Days,
+            From = x.From,
+            To = x.To,
+            Symbol = x.Symbol,
+            //InvestmentDetails = x.Investments.Select(y => new InvestmentDetail
+            //{
+            //    CryptoAmount = y.CryptoAmount,
+            //    InvestmentAmount = y.FiatAmount,
+            //    InvestmentDate = y.Date,
+            //    Price = y.CoinPriceHistory.Price
+            //}).ToList(),
+            TotalCryptoOwned = x.Investments.Sum(y => y.CryptoAmount),
+            TotalFiatInvested = x.Investments.Sum(y => y.FiatAmount)
+        }).ToList();
+    }
+
+    public async Task DeleteInvestmentAsync(int id)
+    {
+        var dbInvestment = await dbContext.InvestmentSummary
+             .Include(x => x.Investments)
+             .FirstAsync(x => x.Id == id);
+        dbContext.InvestmentSummary.Remove(dbInvestment);
+        dbContext.Investment.RemoveRange(dbInvestment.Investments);
+        await dbContext.SaveChangesAsync();
+    }
+
     private static List<DateTime> GetInvestmentDays(AddInvestmentContract contract)
     {
         List<DateTime> investmentDays = [];
@@ -98,7 +135,6 @@ public class CalculatorService(CoinMarketCapClient coinMarketCapClient, AppDbCon
     {
         var historicalPrices = await dbContext.CoinPriceHistory
             .Where(x => x.Symbol == contract.selectedCoin.Symbol && investmentDates.Contains(x.Date))
-            .AsNoTracking()
             .ToListAsync();
 
         List<Investment> investments = [];
@@ -113,14 +149,16 @@ public class CalculatorService(CoinMarketCapClient coinMarketCapClient, AppDbCon
             {
                 Date = date.Date,
                 FiatAmount = contract.investmentAmount,
-                CryptoAmount = contract.investmentAmount / historicalData.Price
+                CryptoAmount = contract.investmentAmount / historicalData.Price,
+                CoinPriceHistory = historicalData,
+                CoinPriceHistoryId = historicalData.Id
             };
             investments.Add(investment);
         }
 
         await dbContext.InvestmentSummary.AddAsync(new InvestmentSummary
         {
-            Days = string.Join(",", contract.selectedInvestmentDays),
+            Days = string.Join(", ", contract.selectedInvestmentDays),
             From = contract.dateFrom.Date,
             To = contract.dateUntil.Date,
             Investments = investments,

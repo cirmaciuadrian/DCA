@@ -9,4 +9,5 @@ public class CoinPriceHistory
     public DateTime Date { get; set; }
     [Column(TypeName = "decimal(18, 5)")]
     public decimal Price { get; set; }
+    public List<Investment> Investments { get; set; } = [];
 }
