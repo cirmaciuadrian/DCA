@@ -229,8 +229,10 @@
         await CalculatorService.DeleteInvestmentAsync(id);
         await BinanceWebSocketClient.UnsubscribeAllAsync();
         _investments.RemoveAll(x => x.Id == id);
+
         await SubscribeToPriceUpdates();
 
+        Snackbar.Add("Investment was deleted succsefully", Severity.Success);
         IsLoading(false);
     }
 }
