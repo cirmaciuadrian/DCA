@@ -15,3 +15,4 @@ The record will be added to the table and the KPI's will be calculated. The pric
 All imputs are validated, Business logic validated, mostly on FE.
 MudBlazor was used everywere.
 You can also "CashOut" an investment. It will be deleted and the websocket subscription will be closed.
+.bak file is included to the repo, additionally you can see a demo of the app there: https://youtu.be/Z2LdvhxwNa0
