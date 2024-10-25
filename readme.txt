@@ -14,3 +14,4 @@ Behavior: You will invest every in every 05 and 15 of each month between 06.01.2
 The record will be added to the table and the KPI's will be calculated. The prices for KPI's are loaded live directly from binance (Web sockets)
 All imputs are validated, Business logic validated, mostly on FE.
 MudBlazor was used everywere.
+You can also "CashOut" an investment. It will be deleted and the websocket subscription will be closed.
