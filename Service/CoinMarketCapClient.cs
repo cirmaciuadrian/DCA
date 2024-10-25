@@ -7,7 +7,7 @@ public class CoinMarketCapClient(HttpClient httpClient, IMemoryCache memoryCache
     private readonly string cacheKey = "Top100Cryptos";
     private readonly TimeSpan cacheDuration = TimeSpan.FromMinutes(1);
 
-    public async Task<TopCryptoResponse> GetTop100Cryptocurrencies()
+    public async Task<TopCryptoResponse> GetTop100CryptoCurrencies()
     {
         if (memoryCache.TryGetValue(cacheKey, out TopCryptoResponse? cachedResponse))
         {

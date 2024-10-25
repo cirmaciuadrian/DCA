@@ -1,6 +1,9 @@
+using DCA.Models;
+
 namespace DCA.Service;
 
 public interface ICalculatorService
 {
-    public Task<TopCryptoResponse> GetTop100Currencies();
+    Task<ServiceResponse<TopCryptoResponse>> GetTop100CurrenciesAsync();
+    Task<ServiceResponse<string>> AddInvestmentAsync(AddInvestmentContract contract);
 }

@@ -4,8 +4,8 @@ namespace DCA.Data.Entities;
 
 public class CoinPriceHistory
 {
-    public string Name { get; set; } = null!;
-    [Column(TypeName = "decimal(18, 10)")]
-    public decimal Price { get; set; }
+    public string Symbol { get; set; } = null!;
     public DateTime Date { get; set; }
+    [Column(TypeName = "decimal(10, 2)")]
+    public decimal Price { get; set; }
 }

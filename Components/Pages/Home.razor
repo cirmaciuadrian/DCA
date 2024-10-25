@@ -31,7 +31,7 @@
                                        Label="Add Days"
                                        DateFormat="dd"
                                        Variant="Variant.Outlined"
-                                       PickerClosed="@OnDateAdd"/>
+                                       PickerClosed="@OnDateAdd" />
                     </MudTooltip>
                     <MudChipSet T="string"
                                 AllClosable="@true"
@@ -42,14 +42,14 @@
                         {
                             var localIndex = i;
                             <MudChip Value="@_selectedInvestmentDays[localIndex]"
-                                     Color="Color.Primary"/>
+                                     Color="Color.Primary" />
                         }
                     </MudChipSet>
                 </MudItem>
                 <MudItem md="6">
                     <MudDateRangePicker Label="Select a range" Variant="Variant.Outlined" @bind-DateRange="_selectedInvestmentDateRange"
                                         MaxDate="@DateTime.Now"
-                                        MinDate="@_minDateInvestment"/>
+                                        MinDate="@_minDateInvestment" />
                 </MudItem>
                 <MudItem md="4">
                     <MudNumericField @bind-Value="_investmentAmount" Label="€" HelperText="Invested Amount"
@@ -68,7 +68,7 @@
     @if (_isLoading)
     {
         <MudOverlay Visible="true" DarkBackground="true" Absolute="true">
-            <MudProgressCircular Color="Color.Secondary" Indeterminate="true"/>
+            <MudProgressCircular Color="Color.Secondary" Indeterminate="true" />
         </MudOverlay>
     }
     <!-- Historical Data Section -->
@@ -83,21 +83,25 @@
     private bool _isLoading = true;
     private List<TopCryptoItem> _topCoins = [];
     TopCryptoItem? _investmentSelectedCoin;
-
-    private string InvestmentCoinPriceHelperText => _investmentSelectedCoin != null
-        ? _investmentSelectedCoin.Quote.EUR.Price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))
-        : "Please don't use currencies with more then 2 decimals";
-
     private readonly List<string> _selectedInvestmentDays = [];
     private DateTime? _selectedInvestmentDate;
     private readonly DateTime _dateInFebruary = new DateTime(2023, 2, 1);
     private readonly DateTime _minDateInvestment = new DateTime(2022, 01, 01);
     private DateRange? _selectedInvestmentDateRange;
     private int? _investmentAmount;
+    private string InvestmentCoinPriceHelperText => _investmentSelectedCoin != null
+        ? _investmentSelectedCoin.Quote.EUR.Price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))
+        : "Please don't use currencies with more then 2 decimals";
 
     protected override async Task OnInitializedAsync()
     {
-        _topCoins = (await CalculatorService.GetTop100Currencies()).Data;
+        var topCurrenciesResponse = await CalculatorService.GetTop100CurrenciesAsync();
+
+        if (topCurrenciesResponse.IsSuccess)
+            _topCoins = topCurrenciesResponse.Response.Data;
+        else
+            Snackbar.Add(topCurrenciesResponse.ErrorMessage, Severity.Error);
+
         _isLoading = false;
     }
 
@@ -114,9 +118,14 @@
     {
         if (!ValidateInvestmentInput()) return;
         IsLoading(true);
-        Task.Delay(2000);
         CleanInvestmentForm();
         IsLoading(false);
+        // var addInvenstemntResponse = await CalculatorService.AddInvestmentAsync(new
+        //     {
+        //         Coin = _investmentSelectedCoin,
+        //         Amount = _investmentAmount,
+        //         Dates = _selectedInvestmentDays
+        //     });
         // var investment = new Investment
         // {
         //     Coin = _investmentSelectedCoin,
@@ -130,7 +139,7 @@
     private bool ValidateInvestmentInput()
     {
         List<string> errorMessages = [];
-        
+
         if (_investmentSelectedCoin == null)
             errorMessages.Add("Please select a coin.");
 
@@ -142,9 +151,9 @@
 
         if (_selectedInvestmentDateRange == null)
             errorMessages.Add("Please select a date range.");
-        
+
         if (errorMessages.Count == 0) return true;
-        
+
         var errorList = string.Join("", errorMessages.Select(msg => $"<li>{msg}</li>"));
         Snackbar.Add(new MarkupString($"<ul>{errorList}</ul>"), Severity.Error);
 
