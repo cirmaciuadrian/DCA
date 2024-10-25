@@ -5,5 +5,5 @@ namespace DCA.Service;
 public interface ICalculatorService
 {
     Task<ServiceResponse<TopCryptoResponse>> GetTop100CurrenciesAsync();
-    Task<ServiceResponse<string>> AddInvestmentAsync(AddInvestmentContract contract);
+    Task<ServiceResponse<bool>> AddInvestmentAsync(AddInvestmentContract contract);
 }

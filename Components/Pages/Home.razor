@@ -1,8 +1,8 @@
 ﻿@page "/"
-@using DCA.Service
-@using DCA.Data.Entities
+
 @inject ICalculatorService CalculatorService;
-@inject ISnackbar Snackbar
+@inject ISnackbar Snackbar;
+
 <PageTitle>DCA Calculator</PageTitle>
 
 <MudGrid>
@@ -10,7 +10,6 @@
         <MudPaper Class="pa-4" Elevation="3">
             <h2 class="mb-1">Add investment</h2>
             <MudGrid class="pt-1">
-
                 <MudItem md="6">
                     <MudSelect AdornmentIcon="@Icons.Material.Filled.CurrencyBitcoin" Label="Select your coin"
                                AnchorOrigin="Origin.BottomCenter" AdornmentColor="Color.Primary"
@@ -23,7 +22,7 @@
                     </MudSelect>
                 </MudItem>
                 <MudItem md="6">
-                    <MudTooltip Text="You can multiple dates">
+                    <MudTooltip Text="You can add multiple dates">
                         <MudDatePicker @bind-Date="_selectedInvestmentDate"
                                        FixYear="@_dateInFebruary.Year"
                                        FixMonth="@_dateInFebruary.Month"
@@ -91,12 +90,12 @@
     private int? _investmentAmount;
     private string InvestmentCoinPriceHelperText => _investmentSelectedCoin != null
         ? _investmentSelectedCoin.Quote.EUR.Price.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("fr-FR"))
-        : "Please don't use currencies with more then 2 decimals";
+        : "Please don't use currencies with more then 3 decimals";
 
     protected override async Task OnInitializedAsync()
     {
         var topCurrenciesResponse = await CalculatorService.GetTop100CurrenciesAsync();
-
+        // BinanceClient.Test();
         if (topCurrenciesResponse.IsSuccess)
             _topCoins = topCurrenciesResponse.Response.Data;
         else
@@ -118,22 +117,20 @@
     {
         if (!ValidateInvestmentInput()) return;
         IsLoading(true);
+
+        var addInvestmentResponse = await CalculatorService.AddInvestmentAsync(
+            new AddInvestmentContract(_investmentSelectedCoin!, _selectedInvestmentDays, _investmentAmount!.Value, _selectedInvestmentDateRange!.Start!.Value, _selectedInvestmentDateRange!.End!.Value)
+        );
+
+        if (!addInvestmentResponse.IsSuccess)
+        {
+            IsLoading(false);
+            Snackbar.Add(addInvestmentResponse.ErrorMessage, Severity.Error);
+            return;
+        }
+        Snackbar.Add("Investment added successfully", Severity.Success);
         CleanInvestmentForm();
         IsLoading(false);
-        // var addInvenstemntResponse = await CalculatorService.AddInvestmentAsync(new
-        //     {
-        //         Coin = _investmentSelectedCoin,
-        //         Amount = _investmentAmount,
-        //         Dates = _selectedInvestmentDays
-        //     });
-        // var investment = new Investment
-        // {
-        //     Coin = _investmentSelectedCoin,
-        //     Amount = _investmentAmount,
-        //     Dates = _selectedInvestmentDays
-        // };
-        //
-        // await CalculatorService.AddInvestment(investment);
     }
 
     private bool ValidateInvestmentInput()

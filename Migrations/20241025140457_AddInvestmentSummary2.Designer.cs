@@ -4,6 +4,7 @@ using DCA.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DCA.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241025140457_AddInvestmentSummary2")]
+    partial class AddInvestmentSummary2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,7 +48,7 @@ namespace DCA.Migrations
                     b.HasIndex("Symbol", "Date")
                         .IsUnique();
 
-                    b.ToTable("CoinPriceHistory");
+                    b.ToTable("CoinPriceHistories");
                 });
 
             modelBuilder.Entity("DCA.Data.Entities.Investment", b =>
@@ -72,7 +75,7 @@ namespace DCA.Migrations
 
                     b.HasIndex("InvestmentSummaryId");
 
-                    b.ToTable("Investment");
+                    b.ToTable("Investments");
                 });
 
             modelBuilder.Entity("DCA.Data.Entities.InvestmentSummary", b =>
@@ -99,7 +102,7 @@ namespace DCA.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("InvestmentSummary");
+                    b.ToTable("InvestmentSummaries");
                 });
 
             modelBuilder.Entity("DCA.Data.Entities.Investment", b =>

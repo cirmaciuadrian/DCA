@@ -15,7 +15,7 @@ public class CoinMarketCapClient(HttpClient httpClient, IMemoryCache memoryCache
         }
 
         var response = await httpClient.GetFromJsonAsync<TopCryptoResponse>(
-            "cryptocurrency/listings/latest?limit=100&convert=eur");
+            "v1/cryptocurrency/listings/latest?limit=100&convert=eur");
         if (response != null)
         {
             memoryCache.Set(cacheKey, response, cacheDuration);
@@ -29,6 +29,6 @@ public record TopCryptoResponse(List<TopCryptoItem> Data);
 
 public record TopCryptoItem(string Name, string Symbol, TopCryptoQuote Quote);
 
-public record TopCryptoQuote(TopCruptoQuoteEUR EUR);
+public record TopCryptoQuote(TopCryptoQuoteEUR EUR);
 
-public record TopCruptoQuoteEUR(decimal Price);
+public record TopCryptoQuoteEUR(decimal Price);

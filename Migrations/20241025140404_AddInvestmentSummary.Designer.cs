@@ -4,6 +4,7 @@ using DCA.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DCA.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241025140404_AddInvestmentSummary")]
+    partial class AddInvestmentSummary
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -45,7 +48,7 @@ namespace DCA.Migrations
                     b.HasIndex("Symbol", "Date")
                         .IsUnique();
 
-                    b.ToTable("CoinPriceHistory");
+                    b.ToTable("CoinPriceHistories");
                 });
 
             modelBuilder.Entity("DCA.Data.Entities.Investment", b =>
@@ -65,53 +68,9 @@ namespace DCA.Migrations
                     b.Property<int>("FiatAmount")
                         .HasColumnType("int");
 
-                    b.Property<int?>("InvestmentSummaryId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("InvestmentSummaryId");
-
-                    b.ToTable("Investment");
-                });
-
-            modelBuilder.Entity("DCA.Data.Entities.InvestmentSummary", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Days")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("From")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Symbol")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("To")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("InvestmentSummary");
-                });
-
-            modelBuilder.Entity("DCA.Data.Entities.Investment", b =>
-                {
-                    b.HasOne("DCA.Data.Entities.InvestmentSummary", null)
-                        .WithMany("Investments")
-                        .HasForeignKey("InvestmentSummaryId");
-                });
-
-            modelBuilder.Entity("DCA.Data.Entities.InvestmentSummary", b =>
-                {
-                    b.Navigation("Investments");
+                    b.ToTable("Investments");
                 });
 #pragma warning restore 612, 618
         }

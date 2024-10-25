@@ -4,6 +4,7 @@ using DCA.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace DCA.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20241025140811_AnotherMigration")]
+    partial class AnotherMigration
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -56,6 +59,9 @@ namespace DCA.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CoinPriceHistoryId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("CryptoAmount")
                         .HasColumnType("decimal(18, 5)");
 
@@ -69,6 +75,8 @@ namespace DCA.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CoinPriceHistoryId");
 
                     b.HasIndex("InvestmentSummaryId");
 
@@ -104,9 +112,18 @@ namespace DCA.Migrations
 
             modelBuilder.Entity("DCA.Data.Entities.Investment", b =>
                 {
+                    b.HasOne("DCA.Data.Entities.CoinPriceHistory", null)
+                        .WithMany("Investments")
+                        .HasForeignKey("CoinPriceHistoryId");
+
                     b.HasOne("DCA.Data.Entities.InvestmentSummary", null)
                         .WithMany("Investments")
                         .HasForeignKey("InvestmentSummaryId");
+                });
+
+            modelBuilder.Entity("DCA.Data.Entities.CoinPriceHistory", b =>
+                {
+                    b.Navigation("Investments");
                 });
 
             modelBuilder.Entity("DCA.Data.Entities.InvestmentSummary", b =>
